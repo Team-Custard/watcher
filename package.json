@@ -1,0 +1,25 @@
+{
+  "name": "watcher",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "type": "module",
+  "devDependencies": {
+    "nodemon": "^3.1.7",
+    "tsx": "^4.19.1",
+    "typescript": "^5.6.3"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.3.0",
+    "discord.js": "^14.16.3",
+    "dotenv": "^16.4.5",
+    "quick.db": "^9.1.7",
+    "watcher": "file:"
+  },
+  "scripts": {
+    "cleanup": "rd /s /q dist data && mkdir data",
+    "build": "tsc",
+    "start": "cd dist && node index.js",
+    "dev": "cd src && tsx index.ts"
+  }
+}
