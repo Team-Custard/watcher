@@ -5,6 +5,11 @@ import * as logger from "./logger.js"
 
 const commands = [
     new SlashCommandBuilder()
+    .setName('invite')
+    .setDescription("Sends the invite to the bot, as well as the support server.")
+    .setIntegrationTypes(ApplicationIntegrationType.GuildInstall)
+    .setContexts(InteractionContextType.Guild),
+    new SlashCommandBuilder()
     .setName('config')
     .setDescription("Configures the bot.")
     .setIntegrationTypes(ApplicationIntegrationType.GuildInstall)
@@ -181,7 +186,12 @@ client.on("interactionCreate", async (interaction: Interaction) => {
 client.on("interactionCreate", async (interaction: Interaction) => {
     if (!interaction.isChatInputCommand()) return;
     
-    if (interaction.command?.name == "config") {
+    if (interaction.command?.name == "invite") {
+        interaction.reply({
+            content: `Bot invite: https://discord.com/oauth2/authorize?client_id=1294168545965379584\nSupport server: https://discord.gg/PnUYnBbxER`
+        })
+    }
+    else if (interaction.command?.name == "config") {
         await interaction.deferReply({ ephemeral: false })
         const settings = await logger.get(interaction.guild as Guild);
 
@@ -236,7 +246,8 @@ client.on("interactionCreate", async (interaction: Interaction) => {
         if (reason.role) {
             const role = await interaction.guild?.roles.fetch(reason.role as string).catch(() => undefined);
             webhook?.editMessage((await webhook?.fetchMessage(reason.messageId)), { content: `**${reason.casetype}** | Case ${caseid}\n**User:** ${target?.tag || `Unknown`} (${target?.id}) (${target || `?`})\n**Role:** ${role?.name} (${role?.id}) \n**Reason:** ${reason.reason || `*No reason specified. Use ${`</set_reason:${client.application?.commands.cache.find(c => c.name == "set_reason")?.id}>` || `/set_reason`}  to set a reason.*`}\n**Responsible moderator:** ${executer?.tag || `Unknown`}`, allowedMentions: { parse: [] } })
-            .then(() => {
+            .then(async () => {
+                await logger.set(interaction.guild!, undefined, undefined, -1, undefined, { casetype: reason.messageId, messageId: reason.messageId, target: target?.id, reason: reason.reason, moderator: executer?.id, role: role?.id}, Number(caseid));
                 interaction.followUp({ content: `:ok_hand: Alright, updated the reason.`, allowedMentions: { parse: [] } })
             })
             .catch(() => {
@@ -244,7 +255,8 @@ client.on("interactionCreate", async (interaction: Interaction) => {
             })
         } else {
             webhook?.editMessage((await webhook?.fetchMessage(reason.messageId)), { content: `**${reason.casetype}** | Case ${caseid}\n**User:** ${target?.tag || `Unknown`} (${target?.id}) (${target || `?`})\n**Reason:** ${reason.reason || `*No reason specified. Use ${`</set_reason:${client.application?.commands.cache.find(c => c.name == "set_reason")?.id}>` || `/set_reason`}  to set a reason.*`}\n**Responsible moderator:** ${executer?.tag || `Unknown`}`, allowedMentions: { parse: [] } })
-            .then(() => {
+            .then(async () => {
+                await logger.set(interaction.guild!, undefined, undefined, -1, undefined, { casetype: reason.messageId, messageId: reason.messageId, target: target?.id, reason: reason.reason, moderator: executer?.id}, Number(caseid));
                 interaction.followUp({ content: `:ok_hand: Alright, updated the reason.`, allowedMentions: { parse: [] } })
             })
             .catch(() => {
