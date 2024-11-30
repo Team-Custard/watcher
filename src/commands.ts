@@ -275,5 +275,4 @@ client.on("interactionCreate", async (interaction: Interaction) => {
         await logger.reset(interaction.guild as Guild);
         interaction.followUp(`Reset the configuration.`);
     }
-    else interaction.reply({ content: `Command not implemented yet. Coming soon:tm: :^)`, ephemeral: true })
 });
