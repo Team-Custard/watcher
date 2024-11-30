@@ -1,4 +1,4 @@
-import { ApplicationIntegrationType, InteractionContextType, PermissionFlagsBits, SlashCommandBuilder, Guild, Interaction, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, MessageActionRowComponentBuilder, APIActionRowComponent, APIMessageActionRowComponent, ButtonInteraction, RoleSelectMenuBuilder, ChannelSelectMenuBuilder, ChannelType, messageLink } from "discord.js";
+import { ApplicationIntegrationType, InteractionContextType, PermissionFlagsBits, SlashCommandBuilder, Guild, Interaction, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, MessageActionRowComponentBuilder, APIActionRowComponent, APIMessageActionRowComponent, ButtonInteraction, RoleSelectMenuBuilder, ChannelSelectMenuBuilder, ChannelType, messageLink, TextChannel } from "discord.js";
 
 import { client } from "./index.js";
 import * as logger from "./logger.js"
@@ -217,6 +217,41 @@ client.on("interactionCreate", async (interaction: Interaction) => {
 
         interaction.followUp({ embeds: [embed], ephemeral: true, components: [actionRow] });
     }
+    else if (interaction.command?.name == "set_reason") {
+        await interaction.deferReply({ ephemeral: false });
+        const settings = await logger.get(interaction.guild as Guild);
+
+        let caseid = await interaction.options.getString("entry");
+        if (caseid?.toLowerCase() == "l" || caseid?.toLowerCase() == "latest") caseid = (settings.cases.length-1).toString();
+        const reason = settings.cases.at(caseid);
+        if (!reason) return interaction.followUp(`Case not found.`);
+        
+        const target = await client.users.fetch(reason.target as string).catch(() => undefined);
+        const executer = interaction.user;
+        reason.reason = await interaction.options.getString("reason");
+        
+        let channel = await interaction.guild?.channels.fetch(settings.channel).catch(() => console.log(`[Error] Unknown channel.`)); if (!channel) return;
+        const webhook = await logger.findWebhook(channel as TextChannel);
+
+        if (reason.role) {
+            const role = await interaction.guild?.roles.fetch(reason.role as string).catch(() => undefined);
+            webhook?.editMessage((await webhook?.fetchMessage(reason.messageId)), { content: `**${reason.casetype}** | Case ${caseid}\n**User:** ${target?.tag || `Unknown`} (${target?.id}) (${target || `?`})\n**Role:** ${role?.name} (${role?.id}) \n**Reason:** ${reason.reason || `*No reason specified. Use ${`</set_reason:${client.application?.commands.cache.find(c => c.name == "set_reason")?.id}>` || `/set_reason`}  to set a reason.*`}\n**Responsible moderator:** ${executer?.tag || `Unknown`}`, allowedMentions: { parse: [] } })
+            .then(() => {
+                interaction.followUp({ content: `:ok_hand: Alright, updated the reason.`, allowedMentions: { parse: [] } })
+            })
+            .catch(() => {
+                interaction.followUp({ content: `Unable to update the reason.`, allowedMentions: { parse: [] } })
+            })
+        } else {
+            webhook?.editMessage((await webhook?.fetchMessage(reason.messageId)), { content: `**${reason.casetype}** | Case ${caseid}\n**User:** ${target?.tag || `Unknown`} (${target?.id}) (${target || `?`})\n**Reason:** ${reason.reason || `*No reason specified. Use ${`</set_reason:${client.application?.commands.cache.find(c => c.name == "set_reason")?.id}>` || `/set_reason`}  to set a reason.*`}\n**Responsible moderator:** ${executer?.tag || `Unknown`}`, allowedMentions: { parse: [] } })
+            .then(() => {
+                interaction.followUp({ content: `:ok_hand: Alright, updated the reason.`, allowedMentions: { parse: [] } })
+            })
+            .catch(() => {
+                interaction.followUp({ content: `Unable to update the reason.`, allowedMentions: { parse: [] } })
+            })
+        }
+    }
     else if (interaction.command?.name == "recall") {
         await interaction.deferReply({ ephemeral: false })
         const settings = await logger.get(interaction.guild as Guild);
@@ -224,7 +259,7 @@ client.on("interactionCreate", async (interaction: Interaction) => {
         let caseid = await interaction.options.getString("entry");
         if (caseid?.toLowerCase() == "l" || caseid?.toLowerCase() == "latest") caseid = (settings.cases.length-1).toString();
         const reason = settings.cases.at(caseid);
-        if (!reason) return interaction.followUp(`Case not found.`)
+        if (!reason) return interaction.followUp(`Case not found.`);
         
         const target = await client.users.fetch(reason.target as string).catch(() => undefined);
         const executer = await client.users.fetch(reason.moderator as string).catch(() => undefined);

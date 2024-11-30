@@ -28,7 +28,7 @@ export async function reset(guild: Guild) {
     return settings;
 };
 
-async function findWebhook(channel: TextChannel) {
+export async function findWebhook(channel: TextChannel) {
     const webhooks = await channel.fetchWebhooks().catch(() => undefined);
     let webhook = webhooks?.find((wh : Webhook) => wh.token);
     if (!webhook) {
